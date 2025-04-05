@@ -1,0 +1,30 @@
+{
+  "name": "image-processing-and-task-api",
+  "version": "1.0.0",
+  "description": "API REST para procesado de imágenes y gestión de tareas.",
+  "main": "dist/app.js",
+  "scripts": {
+    "dev": "nodemon src/app.ts",
+    "start": "tsc && node dist/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "env-var": "^7.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.13.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/mongoose": "^5.11.96",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.14.0",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}
