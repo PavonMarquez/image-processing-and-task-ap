@@ -16,5 +16,5 @@ export default (app: Express) => {
         });
       });
 
-      app.post("/task", TaskController.createTask)
+      app.post("/tasks", TaskController.createTask)
 }

@@ -1,9 +1,8 @@
-
 import express from 'express';
 import morgan from 'morgan';
-import routes from './routes/routes';
 import errorHandler from './middlewares/error-handler';
 import { HttpError } from './utils/http-error';
+import routes from './routes/routes';
 
 
 const app = express();
@@ -15,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rutas
 routes(app);
+
 
 // Middlewares
 // Rutas no encontradas
