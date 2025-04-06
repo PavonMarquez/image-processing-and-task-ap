@@ -33,5 +33,14 @@ export const TaskMongoService = {
     } catch (error) {
       throw new HttpError("Failed to update task status", 500);
     }
+  },
+
+  getTaskById: async (taskId: string) => {
+    try {
+      const task = await TaskModel.findById(new Types.ObjectId(taskId));
+      return task;
+    } catch (error) {
+      throw new Error("Error fetching task from database");
+    }
   }
 };

@@ -17,4 +17,6 @@ export default (app: Express) => {
       });
 
       app.post("/tasks", TaskController.createTask)
+
+      app.get("/tasks/:taskId", TaskController.getTaskById);
 }

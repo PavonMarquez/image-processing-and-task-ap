@@ -47,5 +47,13 @@ export const ImageMongoService = {
     } catch (error) {
       throw new HttpError("Failed to update image with resized variants", 500);
     }
+  },
+
+  getImageById: async (imageId: Types.ObjectId) => {
+    try {
+      return await ImageModel.findById(imageId);
+    } catch (error) {
+      throw new Error("Error fetching image from database");
+    }
   }
 };
