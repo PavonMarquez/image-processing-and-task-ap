@@ -1,0 +1,132 @@
+import { Types } from "mongoose";
+import { TaskService } from "../services/tasks-service";
+import utilsFunctions from "../utils/utils_functions";
+import SharpUtils from "../utils/sharp-utils";
+import { TaskMongoService } from "../databases/mongoServices/task-mongoService";
+import { ImageMongoService } from "../databases/mongoServices/image-mongoService";
+
+describe("TaskService.createTask - URL case", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should create a task from a URL and return taskId, price, and status", async () => {
+    const fakeUrl = "https://example.com/image.jpg";
+
+    jest.spyOn(utilsFunctions, "downloadImage").mockResolvedValue({
+      pathImage: "src/path/to/image.jpg",
+      fileName: "image123.jpg",
+      metadata: {
+        width: 1024,
+        height: 800,
+        format: "jpeg",
+        autoOrient: { width: 1024, height: 800 }
+      }
+    });
+
+    jest.spyOn(TaskService, "saveImage").mockResolvedValue(new Types.ObjectId("637f1a9c2f1e2c3d4e5f6789"));
+
+    jest.spyOn(TaskService, "saveTask").mockResolvedValue({
+      taskId: new Types.ObjectId("637f1a9c2f1e2c3d4e5f6789"),
+      price: 20.5,
+      status: "pending"
+    });
+
+    jest.spyOn(TaskService, "processTask").mockImplementation(() => Promise.resolve());
+
+    const result = await TaskService.createTask(fakeUrl, "URL");
+
+    expect(result).toEqual({
+      taskId: new Types.ObjectId("637f1a9c2f1e2c3d4e5f6789"),
+      price: 20.5,
+      status: "pending"
+    });
+
+    expect(utilsFunctions.downloadImage).toHaveBeenCalledWith(fakeUrl);
+    expect(TaskService.saveImage).toHaveBeenCalled();
+    expect(TaskService.saveTask).toHaveBeenCalled();
+  });
+});
+
+describe("TaskService.createTask - Local Path case", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should create a task from a local path and return taskId, price, and status", async () => {
+    const fakePath = "src/public/images/test/image.jpg";
+
+    jest.spyOn(SharpUtils, "getMetadataImage").mockResolvedValue({
+      width: 800,
+      height: 600,
+      format: "jpeg",
+      autoOrient: { width: 800, height: 600 }
+    });
+
+    jest.spyOn(TaskService, "saveImage").mockResolvedValue(new Types.ObjectId("637f1a9c2f1e2c3d4e5f6789"));
+
+    jest.spyOn(TaskService, "saveTask").mockResolvedValue({
+      taskId: new Types.ObjectId("637f1a9c2f1e2c3d4e5f6789"),
+      price: 25.0,
+      status: "pending"
+    });
+
+    jest.spyOn(TaskService, "processTask").mockImplementation(() => Promise.resolve());
+
+    const result = await TaskService.createTask(fakePath, "PathLocal");
+
+    expect(result).toEqual({
+      taskId: new Types.ObjectId("637f1a9c2f1e2c3d4e5f6789"),
+      price: 25.0,
+      status: "pending"
+    });
+
+    expect(utilsFunctions.downloadImage).not.toHaveBeenCalled();
+    expect(SharpUtils.getMetadataImage).toHaveBeenCalledWith(fakePath);
+    expect(TaskService.saveImage).toHaveBeenCalled();
+    expect(TaskService.saveTask).toHaveBeenCalled();
+  });
+});
+
+describe("TaskService.getTaskById", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should return task and image data with resizedVariants", async () => {
+
+    const fakeTaskId = "637f1a9c2f1e2c3d4e5f6789";
+
+    jest.spyOn(TaskMongoService, "getTaskById").mockResolvedValue(
+      {
+        _id: new Types.ObjectId(fakeTaskId),
+        price: 22.5,
+        status: "completed",
+        imageId: new Types.ObjectId("64a6d3b3e2f69a4e5e2a7abc")
+      } as any
+    );
+
+    jest.spyOn(ImageMongoService, "getImageById").mockResolvedValue(
+      {
+        resizedVariants: [
+          { resolution: "1024", path: "src/public/images/example_1024.jpg" },
+          { resolution: "800", path: "src/public/images/example_800.jpg" }
+        ]
+      } as any
+    );
+    const result = await TaskService.getTaskById(fakeTaskId);
+
+
+    expect(result).toEqual({
+      taskId: fakeTaskId,
+      price: 22.5,
+      status: "completed",
+      images: {
+        resizedVariants: [
+          { resolution: "1024", path: "src/public/images/example_1024.jpg" },
+          { resolution: "800", path: "src/public/images/example_800.jpg" }
+        ]
+      }
+    });
+  });
+});
