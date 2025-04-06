@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import errorHandler from './middlewares/error-handler';
 import { HttpError } from './utils/http-error';
 import routes from './routes/routes';
+import { swaggerSpec, swaggerUi } from './docs/swagger';
 
 
 const app = express();
@@ -11,6 +12,7 @@ const app = express();
 app.use(morgan("dev"));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rutas
 routes(app);
