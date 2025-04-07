@@ -31,6 +31,13 @@ export const TaskService = {
         };
       }
 
+      console.log(`${imageData.metadataImage.width}x${imageData.metadataImage.height}`);
+      
+      console.log(imageData.name);
+      console.log(imageData.path);
+      console.log("---------------------------------------");
+      
+
       const imageId = await TaskService.saveImage(imageData);
 
       const newTask = {
@@ -92,9 +99,11 @@ export const TaskService = {
 
       // Simulamos que el procesamiento de imagen tarda,
       // para reflejar que esta parte se ejecuta en segundo plano.
-      await new Promise(resolve => setTimeout(resolve, 15000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
       const { success, variants } = await SharpUtils.resizeToVariants(imagePath);
+      console.log(variants);
+      
 
       if (success) {
         status = "completed";

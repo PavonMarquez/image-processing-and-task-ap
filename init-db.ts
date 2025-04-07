@@ -1,92 +1,109 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
-import mongoose from 'mongoose';
-import moment from 'moment';
+import mongoose from "mongoose";
+import moment from "moment";
 
-const { MONGO_INITDB_DATABASE, MONGO_INITDB_USERNAME, MONGO_INITDB_PASSWORD } = process.env;
-// Variables de conexión (puedes definirlas en el .env si prefieres)
-const mongoURI = `mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@localhost:27017/${MONGO_INITDB_DATABASE}?authSource=admin`;
+const { MONGO_INITDB_DATABASE, MONGO_INITDB_USERNAME, MONGO_INITDB_PASSWORD, MONGO_URL } = process.env;
+const mongoURI = `mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@${MONGO_URL}/${MONGO_INITDB_DATABASE}?authSource=admin`;
 
-mongoose.connect(mongoURI)
+mongoose
+  .connect(mongoURI)
   .then(async () => {
-    console.log('Conectado a MongoDB');
+    console.log("Conectado a MongoDB");
 
-    // Definir los esquemas de las colecciones
     const imageSchema = new mongoose.Schema({
-      nameFile: String,
+      fileName: String,
       originalPath: String,
       originalResolution: String,
       createdAt: { type: Date, default: Date.now },
       updatedAt: { type: Date, default: Date.now },
-      images: [{
-        resolution: String,
-        path: String
-      }]
+      images: [
+        {
+          resolution: String,
+          path: String
+        }
+      ]
     });
 
     const taskSchema = new mongoose.Schema({
       status: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
-        index: true,
+        enum: ["pending", "completed", "failed"],
+        index: true
       },
       price: Number,
-      imageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Image' },
+      imageId: { type: mongoose.Schema.Types.ObjectId, ref: "Image" },
       createdAt: { type: Date, default: Date.now },
-      updatedAt: { type: Date, default: Date.now },
-      
+      updatedAt: { type: Date, default: Date.now }
     });
 
-    const Image = mongoose.model('Image', imageSchema);
-    const Task = mongoose.model('Task', taskSchema);
+    const Image = mongoose.model("Image", imageSchema);
+    const Task = mongoose.model("Task", taskSchema);
 
-    // Obtener la fecha local en formato ISO
     const localDate = moment().local().toISOString();
 
-    // Insertar documentos en la colección 'images'
-    const imageDoc1 = await Image.create({
-      nameFile: "531481a702d1d1948c4dd78341d499d6.jpg",
-      originalPath: "src/public/images/example1/531481a702d1d1948c4dd78341d499d6.jpg",
-      originalResolution: "3840x2160",
-      createdAt: localDate,
-      updatedAt: localDate
-    });
+    const exampleData = [
+      {
+        fileName: "01b0d1b5a3812eded622df653d3cd482.jpg",
+        folder: "public/images/01b0d1b5a3812eded622df653d3cd482/01b0d1b5a3812eded622df653d3cd482.jpg",
+        resolution: "800x450",
+        status: "pending",
+        price: 32.5,
+        variants: [
+          {
+            resolution: "800",
+            path: 'public/images/01b0d1b5a3812eded622df653d3cd482/resolutions/800/01b0d1b5a3812eded622df653d3cd482_800.jpg'
+          },{
+            resolution: "1024",
+            path: 'public/images/01b0d1b5a3812eded622df653d3cd482/resolutions/1024/01b0d1b5a3812eded622df653d3cd482_1024.jpg'
+          }
+        ]
+      },
+      {
+        fileName: "b05b64b135c654deacc33cf7c4a8aeb5.jpg",
+        folder: "public/images/b05b64b135c654deacc33cf7c4a8aeb5/b05b64b135c654deacc33cf7c4a8aeb5.jpg",
+        resolution: "800x450",
+        status: "pending",
+        price: 45.7,
+        variants: [
+          {
+            resolution: "800",
+            path: 'public/images/b05b64b135c654deacc33cf7c4a8aeb5/resolutions/800/b05b64b135c654deacc33cf7c4a8aeb5_800.jpg'
+          },{
+            resolution: "1024",
+            path: 'public/images/b05b64b135c654deacc33cf7c4a8aeb5/resolutions/1024/b05b64b135c654deacc33cf7c4a8aeb5_1024.jpg'
 
-    const imageDoc2 = await Image.create({
-      nameFile: "c55ba87fefe1a5cbf9a936594aaeb8ce.jpg",
-      originalPath: "src/public/images/example2/c55ba87fefe1a5cbf9a936594aaeb8ce.jpg",
-      originalResolution: "6000x4000",
-      images: [
-        {
-          resolution: "1024",
-          path: "src/public/images/example2/resolutions/1024/c55ba87fefe1a5cbf9a936594aaeb8ce1024px.jpg"
-        }
-      ],
-      createdAt: localDate,
-      updatedAt: localDate
-    });
+          }
+        ]
+      },
+    ];
 
-    // Insertar documentos en la colección 'tasks' con las referencias a 'imageId'
-    await Task.create({
-      status: "pending",
-      price: 25.5,
-      imageId: imageDoc1._id,
-      createdAt: localDate,
-      updatedAt: localDate
-    });
+    for (const item of exampleData) {
+      const image = await Image.create({
+        fileName: item.fileName,
+        originalPath: `public/images/${item.folder}/${item.fileName}.jpg`,
+        originalResolution: item.resolution,
+        images: item.variants.map(v => ({
+          resolution: v.resolution,
+          path: `public/images/${item.folder}/${v.path}`
+        })),
+        createdAt: localDate,
+        updatedAt: localDate
+      });
 
-    await Task.create({
-      status: "completed",
-      price: 30.5,
-      imageId: imageDoc2._id,
-      createdAt: localDate,
-      updatedAt: localDate
-    });
+      await Task.create({
+        status: item.status,
+        price: item.price,
+        imageId: image._id,
+        createdAt: localDate,
+        updatedAt: localDate
+      });
+    }
 
-    console.log('Datos insertados correctamente');
+    console.log("Datos de ejemplo insertados correctamente");
     process.exit();
   })
   .catch(err => {
-    console.error('Error al conectar a MongoDB', err);
+    console.error("Error al conectar a MongoDB", err);
     process.exit(1);
   });

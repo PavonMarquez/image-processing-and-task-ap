@@ -28,7 +28,7 @@ const utilsFunctions = {
 
   downloadImage: async (url: string): Promise<{ pathImage: string; fileName: string; metadata: sharp.Metadata }> => {
     try {
-      const IMAGE_DIR = path.join(__dirname, "../public/images");
+      const IMAGE_DIR = path.join(process.cwd(), "public", "images");
   
       const response = await axios.get(url, { responseType: "arraybuffer" });
   
@@ -41,31 +41,30 @@ const utilsFunctions = {
         "image/webp": ".webp"
       };
       const ext = path.extname(fileName) || mimeToExt[contentType] || ".jpg";
-
+  
       const hash = utilsFunctions.getFileNameWithHash(imageName);
       const hashedFileName = hash + ext;
       const imageFolder = path.join(IMAGE_DIR, hash);
       const filePath = path.join(imageFolder, hashedFileName);
   
-      if (fs.existsSync(filePath)) {
-        const metadataImage = await SharpUtils.getMetadataImage(filePath);
-        const relativePath = path.join("src", path.relative(path.join(__dirname, ".."), filePath));
-        return { pathImage: relativePath, fileName: hashedFileName, metadata: metadataImage };
+      if (!fs.existsSync(imageFolder)) {
+        fs.mkdirSync(imageFolder, { recursive: true });
       }
   
-      if (!fs.existsSync(IMAGE_DIR)) fs.mkdirSync(IMAGE_DIR, { recursive: true });
-      if (!fs.existsSync(imageFolder)) fs.mkdirSync(imageFolder, { recursive: true });
-  
-      fs.writeFileSync(filePath, response.data);
+      if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, response.data);
+      }
   
       const metadataImage = await SharpUtils.getMetadataImage(filePath);
-      const relativePath = path.join("src", path.relative(path.join(__dirname, ".."), filePath));
+      const relativePath = path.relative(process.cwd(), filePath); // public/images/...
   
       return { pathImage: relativePath, fileName: hashedFileName, metadata: metadataImage };
     } catch (error) {
+      console.error(error); // para ver errores en producción también
       throw new HttpError("Failed to download and store image", 500);
     }
   }
+  
   
   
 };
