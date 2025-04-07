@@ -49,7 +49,7 @@ mongoose
         fileName: "01b0d1b5a3812eded622df653d3cd482.jpg",
         folder: "public/images/01b0d1b5a3812eded622df653d3cd482/01b0d1b5a3812eded622df653d3cd482.jpg",
         resolution: "800x450",
-        status: "pending",
+        status: "completed",
         price: 32.5,
         variants: [
           {
@@ -65,7 +65,7 @@ mongoose
         fileName: "b05b64b135c654deacc33cf7c4a8aeb5.jpg",
         folder: "public/images/b05b64b135c654deacc33cf7c4a8aeb5/b05b64b135c654deacc33cf7c4a8aeb5.jpg",
         resolution: "800x450",
-        status: "pending",
+        status: "completed",
         price: 45.7,
         variants: [
           {
