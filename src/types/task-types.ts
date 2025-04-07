@@ -9,7 +9,7 @@ export namespace TaskType {
 
   export type TaskResponse = {
     taskId: string;
-    status: "pending" | "completed" | "failed";
+    status: "pending" | "completed" | "failed" | null | undefined;
     price: number;
     images?: {
       resizedVariants: {

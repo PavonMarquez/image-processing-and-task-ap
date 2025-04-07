@@ -8,16 +8,17 @@ API REST desarrollada para gestionar tareas de procesamiento de imágenes. Permi
 
 Se ha seguido una separación por **capas** para mantener claridad y modularidad:
 
-- `controllers/`: controladores de las rutas
-- `routes/`: definición de endpoints
+- `controllers/`: Recibe la petición HTTP, valida y delega al servicio correspondiente
+- `routes/`: Definición de endpoints
 - `services/`: lógica de negocio principal
-- `databases/mongoServices/`: acceso a base de datos con Mongoose
-- `models/`: esquemas de MongoDB
-- `utils/`: funciones auxiliares reutilizables
-- `configs/`: configuración de entorno y conexión a MongoDB
-- `middlewares/`: middlewares como el manejador de errores
-- `docs/`: documentación con Swagger
-- `__tests__/`: pruebas unitarias y de integración
+- `domain/repositories/`: Define interfaces para los repositorios de acceso a datos
+- `infrastructure/mongo/`: Contiene las implementaciones concretas de los repositorios 
+- `models/`: Esquemas de MongoDB
+- `utils/`: Funciones auxiliares reutilizables
+- `configs/`: Configuración de entorno y conexión a MongoDB
+- `middlewares/`: Middlewares como el manejador de errores
+- `docs/`: Documentación con Swagger
+- `__tests__/`: Pruebas unitarias y de integración
 
 Aunque no se aplicó una arquitectura hexagonal formal, sí se separaron responsabilidades para facilitar el mantenimiento, pruebas y extensibilidad.
 
@@ -50,6 +51,7 @@ Aunque no se aplicó una arquitectura hexagonal formal, sí se separaron respons
 - dotenv + env-var – manejo seguro de variables de entorno
 - moment – para formateo de fechas
 - morgan – logger de peticiones HTTP
+- winston – sistema de logging estructurado y configurable (log de errores, info, etc.)
 
 ---
 

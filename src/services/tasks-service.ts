@@ -1,12 +1,15 @@
 import utilsFunctions from "../utils/utils_functions";
 import SharpUtils from "../utils/sharp-utils";
 import { ImageType } from "../types/image-types";
-import { ImageMongoService } from "../databases/mongoServices/image-mongoService";
+
 import { TaskType } from "../types/task-types";
-import { TaskMongoService } from "../databases/mongoServices/task-mongoService";
+
 import { Types } from "mongoose";
 import { HttpError } from "../utils/http-error";
 import logger from "../utils/logger";
+
+import { taskRepositoryMongo as taskRepo } from "../infrastructure/mongo/task-repository-mongo";
+import { imageRepositoryMongo as imageRepo } from "../infrastructure/mongo/image-repository.mongo";
 
 export const TaskService = {
   createTask: async (path: string, typePath: string) => {
@@ -31,7 +34,7 @@ export const TaskService = {
           name: utilsFunctions.getFileNameWithHash(imagePath)
         };
       }
-    
+
       const imageId = await TaskService.saveImage(imageData);
 
       const newTask = {
@@ -65,7 +68,7 @@ export const TaskService = {
         format: data.metadataImage.format
       };
 
-      const saveImage = await ImageMongoService.saveImage(newImage);
+      const saveImage = await imageRepo.saveImage(newImage);
 
       return saveImage;
     } catch (error) {
@@ -81,9 +84,9 @@ export const TaskService = {
         price: data.price,
         imageId: data.imageId
       };
-  
-      const saveTask = await TaskMongoService.saveTask(newTask);
-  
+
+      const saveTask = await taskRepo.saveTask(newTask);
+
       return saveTask;
     } catch (error) {
       logger.error("Failed to save task", error);
@@ -97,69 +100,47 @@ export const TaskService = {
     imageId
   }: {
     imagePath: string;
-    taskId: Types.ObjectId;
+    taskId: string;
     imageId: Types.ObjectId;
   }) => {
     try {
       let status: "failed" | "completed" = "failed";
-  
+
       // Simulamos que el procesamiento de imagen tarda,
       // para reflejar que esta parte se ejecuta en segundo plano.
-      await new Promise(resolve => setTimeout(resolve, 15000));
-  
+      await new Promise(resolve => setTimeout(resolve, 20000));
+
       const { success, variants } = await SharpUtils.resizeToVariants(imagePath);
-  
+
       if (success) {
         status = "completed";
-  
+
         if (variants && variants.length > 0) {
           try {
-            await ImageMongoService.updateImage({ imageId, variants });
+            await imageRepo.updateImage({ imageId, variants });
           } catch (err) {
             logger.error(`Error updating image variants in DB. imageId: ${imageId}`, err);
           }
         }
       }
-  
+
       try {
-        await TaskMongoService.updateTask({ taskId, status });
+        await taskRepo.updateTaskStatus({ taskId, status });
       } catch (err) {
         logger.error(`Error updating task status. taskId: ${taskId}`, err);
       }
-  
+
       logger.info(`Task ${taskId} processed with status: ${status}`);
     } catch (err) {
       logger.error("Unexpected error in processTask", err);
-
     }
   },
 
   getTaskById: async (taskId: string): Promise<TaskType.TaskResponse> => {
     try {
-      const task = await TaskMongoService.getTaskById(taskId);
+      const taskWithImage = await taskRepo.getTaskWithImage(taskId);
 
-      if (!task) throw new HttpError("Task not found", 404);
-
-      const image = await ImageMongoService.getImageById(task.imageId);
-      if (!image) throw new HttpError("Image not found", 404);
-
-      const variants = image.resizedVariants?.filter(v => v.resolution && v.path) || [];
-
-      const response: TaskType.TaskResponse = {
-        taskId: task._id.toString(),
-        status: task.status ?? "pending",
-        price: task.price,
-        ...(variants.length > 0 && {
-          images: {
-            resizedVariants: variants.map(v => ({
-              resolution: v.resolution!,
-              path: v.path!
-            }))
-          }
-        })
-      };
-  
-      return response;
+      return taskWithImage;
     } catch (error) {
       logger.error("Failed to retrieve task by ID", error);
       throw new HttpError("Internal server error while retrieving task", 500);
