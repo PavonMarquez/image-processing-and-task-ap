@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { envs } from './env-var';
+import logger from '../utils/logger';
 
 const connectDB = async () => {
   try {
@@ -8,10 +9,10 @@ const connectDB = async () => {
 
 
     await mongoose.connect(connectionString);
+    logger.info('MongoDB connected');
 
-    console.log('MongoDB connected');
   } catch (err) {
-    console.error('Error al conectar con MongoDB:', err);
+    logger.error('Error al conectar con MongoDB:', err);
     throw new Error('No se pudo conectar a la base de datos');
   }
 };

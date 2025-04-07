@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
 import moment from "moment";
+import logger from "./src/utils/logger";
 
 const { MONGO_INITDB_DATABASE, MONGO_INITDB_USERNAME, MONGO_INITDB_PASSWORD, MONGO_URL } = process.env;
 const mongoURI = `mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@${MONGO_URL}/${MONGO_INITDB_DATABASE}?authSource=admin`;
@@ -9,8 +10,9 @@ const mongoURI = `mongodb://${MONGO_INITDB_USERNAME}:${MONGO_INITDB_PASSWORD}@${
 mongoose
   .connect(mongoURI)
   .then(async () => {
-    console.log("Conectado a MongoDB");
 
+    logger.info("Conectado a MongoDB")
+    
     const imageSchema = new mongoose.Schema({
       fileName: String,
       originalPath: String,
@@ -100,10 +102,10 @@ mongoose
       });
     }
 
-    console.log("Datos de ejemplo insertados correctamente");
+    logger.info("Datos de ejemplo insertados correctamente");
     process.exit();
   })
   .catch(err => {
-    console.error("Error al conectar a MongoDB", err);
+    logger.error("Error al conectar a MongoDB,", err);
     process.exit(1);
   });

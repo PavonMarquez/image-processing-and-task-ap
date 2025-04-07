@@ -6,11 +6,12 @@ import { TaskType } from "../types/task-types";
 import { TaskMongoService } from "../databases/mongoServices/task-mongoService";
 import { Types } from "mongoose";
 import { HttpError } from "../utils/http-error";
+import logger from "../utils/logger";
 
 export const TaskService = {
   createTask: async (path: string, typePath: string) => {
     try {
-      if (!path || !typePath) throw new Error("Missing parameters");
+      if (!path || !typePath) throw new HttpError("Missing parameters", 400);
 
       let imagePath = path;
       let imageData;
@@ -30,14 +31,7 @@ export const TaskService = {
           name: utilsFunctions.getFileNameWithHash(imagePath)
         };
       }
-
-      console.log(`${imageData.metadataImage.width}x${imageData.metadataImage.height}`);
-      
-      console.log(imageData.name);
-      console.log(imageData.path);
-      console.log("---------------------------------------");
-      
-
+    
       const imageId = await TaskService.saveImage(imageData);
 
       const newTask = {
@@ -51,12 +45,19 @@ export const TaskService = {
 
       return taskSave;
     } catch (error) {
-      throw error;
+      logger.error("Internal error while creating task", error);
+      throw new HttpError("Failed to create task", 500);
     }
   },
 
   saveImage: async (data: ImageType.ImageData) => {
     try {
+      const { path, name, metadataImage } = data;
+
+      if (!metadataImage.width || !metadataImage.height || !metadataImage.format) {
+        throw new HttpError("Incomplete metadata received", 400);
+      }
+
       const newImage = {
         originalPath: data.path,
         fileName: data.name,
@@ -68,7 +69,8 @@ export const TaskService = {
 
       return saveImage;
     } catch (error) {
-      throw error;
+      logger.error("Failed to save image", error);
+      throw new HttpError("Internal error while saving image", 500);
     }
   },
 
@@ -79,10 +81,14 @@ export const TaskService = {
         price: data.price,
         imageId: data.imageId
       };
-      const saveTask = await TaskMongoService.saveImage(newTask);
-
+  
+      const saveTask = await TaskMongoService.saveTask(newTask);
+  
       return saveTask;
-    } catch (error) {}
+    } catch (error) {
+      logger.error("Failed to save task", error);
+      throw new HttpError("Internal error while saving task", 500);
+    }
   },
 
   processTask: async ({
@@ -96,26 +102,35 @@ export const TaskService = {
   }) => {
     try {
       let status: "failed" | "completed" = "failed";
-
+  
       // Simulamos que el procesamiento de imagen tarda,
       // para reflejar que esta parte se ejecuta en segundo plano.
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
+      await new Promise(resolve => setTimeout(resolve, 15000));
+  
       const { success, variants } = await SharpUtils.resizeToVariants(imagePath);
-      console.log(variants);
-      
-
+  
       if (success) {
         status = "completed";
-
+  
         if (variants && variants.length > 0) {
-          ImageMongoService.updateImage({ imageId, variants });
+          try {
+            await ImageMongoService.updateImage({ imageId, variants });
+          } catch (err) {
+            logger.error(`Error updating image variants in DB. imageId: ${imageId}`, err);
+          }
         }
       }
+  
+      try {
+        await TaskMongoService.updateTask({ taskId, status });
+      } catch (err) {
+        logger.error(`Error updating task status. taskId: ${taskId}`, err);
+      }
+  
+      logger.info(`Task ${taskId} processed with status: ${status}`);
+    } catch (err) {
+      logger.error("Unexpected error in processTask", err);
 
-      TaskMongoService.updateTask({ taskId, status });
-    } catch (error) {
-      throw new HttpError("Failed to process image variants and update task", 500);
     }
   },
 
@@ -146,7 +161,8 @@ export const TaskService = {
   
       return response;
     } catch (error) {
-      throw error;
+      logger.error("Failed to retrieve task by ID", error);
+      throw new HttpError("Internal server error while retrieving task", 500);
     }
   }
 };

@@ -2,6 +2,7 @@ import fs from "fs";
 import { HttpError } from "./http-error";
 import sharp from "sharp";
 import path from "path";
+import logger from "./logger";
 
 const SharpUtils = {
 
@@ -10,6 +11,7 @@ const SharpUtils = {
       const metadata = await sharp(imagePath).metadata();
       return metadata;
     } catch (error) {
+      logger.error(`Failed to get image metadata for: ${imagePath}`, error);
       throw new HttpError("Error in obtaining image resolution", 500);
     }
   },
@@ -54,6 +56,7 @@ const SharpUtils = {
         variants: generatedPaths
       };
     } catch (error) {
+      logger.error("Error resizing image variants", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unexpected error during image resizing"
